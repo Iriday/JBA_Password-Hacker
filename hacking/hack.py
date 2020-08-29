@@ -7,10 +7,18 @@ from string import digits, ascii_letters
 def run(host, port, passwords):
     with socket.socket() as st:
         st.connect((host, port))
+        attempt = 0
         for password in passwords:
+            attempt += 1
             st.send(password.encode())
-            if st.recv(1024).decode() == "Connection success!":
+            response = st.recv(1024).decode()
+            if response == "Connection success!":
                 return password
+            if response != "Wrong password!":
+                raise Exception("Something went wrong!")
+            if attempt == 999_999:  # reconnect to prevent "Too many attempts" / this value can be passed as argument
+                st.connect((host, port))
+                attempt = 0
 
 
 def password_gen(pass_max_len):
