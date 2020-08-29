@@ -1,6 +1,6 @@
 import socket
 import sys
-from itertools import combinations_with_replacement, permutations, chain
+from itertools import combinations_with_replacement, permutations, chain, product
 from string import digits, ascii_letters
 
 
@@ -22,4 +22,20 @@ def password_gen(pass_max_len):
                 yield "".join(p)
 
 
-print(run(sys.argv[1], int(sys.argv[2]), password_gen(12)))
+def read_lines_from_file(path):
+    with open(path) as file:
+        return file.read().split("\n")
+
+
+def dict_based_gen(dictionary):
+    for line in dictionary:
+        for password in product(*[c + c.upper() for c in line]):  # example:  "hack" -> "hH", "aA", "cC", "kK"
+            yield "".join(password)
+
+
+# try typical passwords first
+result = run(sys.argv[1], int(sys.argv[2]), dict_based_gen(read_lines_from_file("dictionaries/typical_passwords.txt")))
+if result:
+    print(result)
+else:
+    print(run(sys.argv[1], int(sys.argv[2]), password_gen(12)))
