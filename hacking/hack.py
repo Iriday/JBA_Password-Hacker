@@ -1,6 +1,6 @@
 import socket
 import sys
-from itertools import combinations_with_replacement, permutations, chain, product
+from itertools import product
 from string import digits, ascii_letters
 
 
@@ -13,13 +13,10 @@ def run(host, port, passwords):
                 return password
 
 
-def password_gen(pass_max_len):
-    ch = chain()
+def password_gen(pass_max_len, chars):
     for i in range(1, pass_max_len + 1):
-        ch = chain(*ch, digits, ascii_letters)
-        for c in combinations_with_replacement(ch, i):
-            for p in permutations(c, i):
-                yield "".join(p)
+        for p in product(chars, repeat=i):
+            yield "".join(p)
 
 
 def read_lines_from_file(path):
@@ -38,4 +35,4 @@ result = run(sys.argv[1], int(sys.argv[2]), dict_based_gen(read_lines_from_file(
 if result:
     print(result)
 else:
-    print(run(sys.argv[1], int(sys.argv[2]), password_gen(12)))
+    print(run(sys.argv[1], int(sys.argv[2]), password_gen(12, digits + ascii_letters)))
