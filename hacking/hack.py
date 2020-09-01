@@ -4,13 +4,11 @@ from itertools import product
 from string import digits, ascii_letters
 
 
-def run(host, port, passwords):
-    with socket.socket() as st:
-        st.connect((host, port))
-        for password in passwords:
-            st.send(password.encode())
-            if st.recv(1024).decode() == "Connection success!":
-                return password
+def hack_single_pass_server(socket_, passwords):
+    for password in passwords:
+        socket_.send(password.encode())
+        if socket_.recv(1024).decode() == "Connection success!":
+            return password
 
 
 def password_gen(pass_max_len, chars):
@@ -30,9 +28,15 @@ def dict_based_gen(dictionary):
             yield "".join(password)
 
 
-# try typical passwords first
-result = run(sys.argv[1], int(sys.argv[2]), dict_based_gen(read_lines_from_file("dictionaries/typical_passwords.txt")))
-if result:
-    print(result)
-else:
-    print(run(sys.argv[1], int(sys.argv[2]), password_gen(12, digits + ascii_letters)))
+def run():
+    with socket.socket() as st:
+        st.connect((sys.argv[1], int(sys.argv[2])))
+        # try typical passwords first
+        result = hack_single_pass_server(st, dict_based_gen(read_lines_from_file("dictionaries/typical_passwords.txt")))
+        if result:
+            print(result)
+        else:
+            print(hack_single_pass_server(st, password_gen(12, digits + ascii_letters)))
+
+
+run()
